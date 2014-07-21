@@ -93,6 +93,9 @@ compute_max_cpus ()
 {
 #TODO: Add other systems here
 	case $(uname -s) in
+        "Darwin")
+            max_cpus=$(sysctl -n hw.ncpu)
+            ;;
 		"Linux")
 		      if [ -f /proc/$$/cpuset -a -d /dev/cpuset ]; then
 		        cpuset=`cat /proc/$$/cpuset`

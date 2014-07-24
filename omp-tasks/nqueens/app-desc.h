@@ -22,11 +22,15 @@
 
 #define BOTS_APP_NAME "N Queens"
 #define BOTS_APP_PARAMETERS_DESC "N=%d"
-#define BOTS_APP_PARAMETERS_LIST ,bots_arg_size
+#define BOTS_APP_PARAMETERS_LIST ,bots_arg_size, bots_app_cutoff_value
 
 #define BOTS_APP_USES_ARG_SIZE
 #define BOTS_APP_DEF_ARG_SIZE 14
 #define BOTS_APP_DESC_ARG_SIZE "Board size"
+
+#define BOTS_APP_USES_ARG_CUTOFF
+#define BOTS_APP_DEF_ARG_CUTOFF 3
+#define BOTS_APP_DESC_ARG_CUTOFF "Cutoff limit"
 
 int ok(int n, char *a);
 

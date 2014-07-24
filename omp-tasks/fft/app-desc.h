@@ -23,11 +23,17 @@
 
 #define BOTS_APP_NAME "FFT"
 #define BOTS_APP_PARAMETERS_DESC "Size=%d"
-#define BOTS_APP_PARAMETERS_LIST ,bots_arg_size
+#define BOTS_APP_PARAMETERS_LIST ,bots_arg_size, bots_app_cutoff_value
 
 #define BOTS_APP_USES_ARG_SIZE
 #define BOTS_APP_DEF_ARG_SIZE 32*1024*1024
 #define BOTS_APP_DESC_ARG_SIZE "Matrix Size"
+
+#define BOTS_APP_USES_ARG_CUTOFF
+#define BOTS_APP_DEF_ARG_CUTOFF 256
+#define BOTS_APP_DESC_ARG_CUTOFF "Cutoff limit"
+
+#define BOTS_CUTOFF_DEF_VALUE 256
 
 #define BOTS_APP_INIT int i;\
      COMPLEX *in, *out1=NULL, *out2=NULL;\

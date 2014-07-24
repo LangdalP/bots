@@ -12,6 +12,7 @@ print_help()
 	echo "-debug			Show extra messages"
 	echo "-h			Prints this help"
 	echo "-i inputs_list		List of inputs to use for executions"
+	echo "-x cutoff_list		List of cutoffs to use for executions"
 	echo "-l label_list		List of labels (compilers) to use for executions"
 	echo "-v versions_list		List of versions of the benchmark to use for execution"
 	echo "-verbose 0|1|2		Set application verbosity"
@@ -35,6 +36,8 @@ parse_args ()
 			"-h") 	print_help $0; exit 
 				;;
 			"-i")   shift; ARG_INPUTS=$1
+				;;
+			"-x")   shift; ARG_CUTOFFS=$1
 				;;
 			"-l")	shift; ARG_LABELS=$1
 				;;
@@ -165,6 +168,11 @@ expand_inputs ()
 	INPUTS=$(echo $INPUTS | tr , '  ')
 }
 
+expand_cutoffs ()
+{
+	CUTOFFS=$(echo $CUTOFFS | tr , '  ')
+}
+
 expand_labels ()
 {
 	if [ "$LABELS" = "all" ]; then
@@ -210,6 +218,13 @@ set_values ()
 		INPUTS=$DEF_INPUTS
 	fi 
 	expand_inputs
+
+	if [ "$ARG_CUTOFFS" ]; then
+		CUTOFFS=$ARG_CUTOFFS
+	else
+		CUTOFFS=$DEF_CUTOFFS
+	fi
+    expand_cutoffs
 }
 
 exec_serial ()
@@ -227,7 +242,7 @@ exec_omp ()
 	command=$BIN/$2
 	cpus=$1
 	shift 2
-
+    
 	OMP_NUM_THREADS=$cpus $command $*
 	return 0
 }
@@ -238,6 +253,7 @@ exec_external ()
 	local app=$2
 	local label=$3
 	local version=$4
+	local cutoff=$5
 	shift 4
 
 	local bin=$BIN/$app.$label.$version
@@ -260,7 +276,8 @@ exec_app ()
 	label=$2
 	version=$3
 	cpus=$4
-	shift 4
+    cutoff=$5
+	shift 5
 
 	if (echo $version | grep serial) > /dev/null; then
 	   if [ "$serial_run" = "yes" ]; then
@@ -269,10 +286,17 @@ exec_app ()
 	      serial_run="yes"
 	   fi
 	fi
+    
+    extra_cutoff= 
+    case $version in
+    omp-tasks-if_clause* | omp-tasks-manual* | omp-tasks-final* | omp-tasks-final_ser*)  
+       extra_cutoff="-x $cutoff"
+       ;;
+     esac
 
-	[ "$EXEC_MANAGER" ] && exec_external $cpus $app $label $version $* && return
+	[ "$EXEC_MANAGER" ] && exec_external $cpus $app $label $version $extra_cutoff $* && return
 	(echo $version | grep serial) > /dev/null && exec_serial $cpus $app.$label.$version $* && return
-	(echo $version | grep omp) > /dev/null && exec_omp $cpus $app.$label.$version $* && return
+	(echo $version | grep omp) > /dev/null && exec_omp $cpus $app.$label.$version $extra_cutoff $*  && return
 
 	echo "FATAL ERROR: Don't know how to execute $version"
 	exit 1
@@ -286,6 +310,7 @@ for label in $LABELS; do
 for args in $INPUTS; do
 serial_run=no
 for cpus in $CPUS; do
+for cutoff in $CUTOFFS; do
 for version in $VERSIONS; do
 
 case $mode in
@@ -310,8 +335,9 @@ case $mode in
 esac
 
 [ "$VERBOSE" ] && echo "Executing $APP($label,$version) with $cpus CPUS"
-exec_app $APP $label $version $cpus $INPUT $VERIFY $EXTRA
+exec_app $APP $label $version $cpus $cutoff $INPUT $VERIFY $EXTRA
 
+done
 done
 done
 done
@@ -321,6 +347,7 @@ for class in $(echo $ARG_CLASSES | tr , ' '); do
 for label in $LABELS; do
 serial_run=no
 for cpus in $CPUS; do
+for cutoff in $CUTOFF; do
 for version in $VERSIONS; do
 
 case $mode in
@@ -366,8 +393,9 @@ esac
 
 [ "$VERBOSE" ] && echo "Executing $APP ($label,$version) with $cpus CPUS"
 
-eval $ENV exec_app $APP $label $version $cpus $INPUT $CLASS $VERIFY $EXTRA
+eval $ENV exec_app $APP $label $version $cpus $cutoff $INPUT $CLASS $VERIFY $EXTRA
 
+done
 done
 done
 done

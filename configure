@@ -127,7 +127,7 @@ fi
 
 if [ "$COMPILER" = "mcc" -a "$MCC" = "yes" ]; then
 	case $(uname -i) in
-		x86_64) extras="-m32"
+		x86_64) extras=""
                         ;;
         esac
 

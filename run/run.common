@@ -1,6 +1,7 @@
 DEF_CPUS=all
 DEF_VERSIONS=all
 DEF_LABELS=all
+DEF_CUTOFFS=none
 
 print_help()
 {
@@ -170,7 +171,11 @@ expand_inputs ()
 
 expand_cutoffs ()
 {
-	CUTOFFS=$(echo $CUTOFFS | tr , '  ')
+	if [ "$CUTOFFS" = "all" ]; then
+        CUTOFFS=none
+    else
+        CUTOFFS=$(echo $CUTOFFS | tr , '  ')
+    fi
 }
 
 expand_labels ()
@@ -287,12 +292,16 @@ exec_app ()
 	   fi
 	fi
     
-    extra_cutoff= 
-    case $version in
-    omp-tasks-if_clause* | omp-tasks-manual* | omp-tasks-final* | omp-tasks-final_ser*)  
-       extra_cutoff="-x $cutoff"
-       ;;
-     esac
+    if [ "$cutoff" = "none" ]; then
+        extra_cutoff=
+    else
+        extra_cutoff=
+        case $version in
+        omp-tasks-if_clause* | omp-tasks-manual* | omp-tasks-final* | omp-tasks-final_ser*)  
+           extra_cutoff="-x $cutoff"
+           ;;
+         esac
+    fi
 
 	[ "$EXEC_MANAGER" ] && exec_external $cpus $app $label $version $extra_cutoff $* && return
 	(echo $version | grep serial) > /dev/null && exec_serial $cpus $app.$label.$version $* && return

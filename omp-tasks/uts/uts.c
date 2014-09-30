@@ -166,6 +166,29 @@ int uts_numChildren(Node *parent)
   return numChildren;
 }
 
+
+unsigned long long serTreeSearch(int depth, Node *parent, int numChildren) 
+{
+  unsigned long long subtreesize = 1, partialCount[numChildren];
+  Node n[numChildren];
+  int i, j;
+
+  // Recurse on the children
+  for (i = 0; i < numChildren; i++) {
+     n[i].height = parent->height + 1;
+     // The following line is the work (one or more SHA-1 ops)
+     for (j = 0; j < computeGranularity; j++) {
+        rng_spawn(parent->state.state, n[i].state.state, i);
+     }
+     partialCount[i] = serTreeSearch(depth+1, &n[i], uts_numChildren(&n[i]));
+  }
+ 
+  // computing total size
+  for (i = 0; i < numChildren; i++) subtreesize += partialCount[i];
+  
+  return subtreesize;
+}
+
 /***********************************************************
  * Recursive depth-first implementation                    *
  ***********************************************************/
@@ -186,6 +209,114 @@ unsigned long long parallel_uts ( Node *root )
 
    return num_nodes;
 }
+
+#if defined(IF_CUTOFF)
+
+unsigned long long parTreeSearch(int depth, Node *parent, int numChildren) 
+{
+  Node n[numChildren], *nodePtr;
+  int i, j;
+  unsigned long long subtreesize = 1, partialCount[numChildren];
+
+  // Recurse on the children
+  for (i = 0; i < numChildren; i++) {
+     nodePtr = &n[i];
+
+     nodePtr->height = parent->height + 1;
+
+     // The following line is the work (one or more SHA-1 ops)
+     for (j = 0; j < computeGranularity; j++) {
+        rng_spawn(parent->state.state, nodePtr->state.state, i);
+     }
+
+     nodePtr->numChildren = uts_numChildren(nodePtr);
+
+     #pragma omp task untied firstprivate(i, nodePtr) shared(partialCount) if(depth < bots_cutoff_value)
+        partialCount[i] = parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
+  }
+
+  #pragma omp taskwait
+
+  for (i = 0; i < numChildren; i++) {
+     subtreesize += partialCount[i];
+  }
+  
+  return subtreesize;
+}
+
+#elif defined(FINAL_CUTOFF)
+
+unsigned long long parTreeSearch(int depth, Node *parent, int numChildren) 
+{
+  Node n[numChildren], *nodePtr;
+  int i, j;
+  unsigned long long subtreesize = 1, partialCount[numChildren];
+
+  // Recurse on the children
+  for (i = 0; i < numChildren; i++) {
+     nodePtr = &n[i];
+
+     nodePtr->height = parent->height + 1;
+
+     // The following line is the work (one or more SHA-1 ops)
+     for (j = 0; j < computeGranularity; j++) {
+        rng_spawn(parent->state.state, nodePtr->state.state, i);
+     }
+
+     nodePtr->numChildren = uts_numChildren(nodePtr);
+
+     #pragma omp task untied firstprivate(i, nodePtr) shared(partialCount) final(depth+1 >= bots_cutoff_value)
+        partialCount[i] = parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
+  }
+
+  #pragma omp taskwait
+
+  for (i = 0; i < numChildren; i++) {
+     subtreesize += partialCount[i];
+  }
+  
+  return subtreesize;
+}
+
+#elif defined(MANUAL_CUTOFF)
+
+unsigned long long parTreeSearch(int depth, Node *parent, int numChildren) 
+{
+  if (depth >= bots_cutoff_value) {
+    return serTreeSearch(depth, parent, numChildren);
+  }
+  
+  Node n[numChildren], *nodePtr;
+  int i, j;
+  unsigned long long subtreesize = 1, partialCount[numChildren];
+
+  // Recurse on the children
+  for (i = 0; i < numChildren; i++) {
+     nodePtr = &n[i];
+
+     nodePtr->height = parent->height + 1;
+
+     // The following line is the work (one or more SHA-1 ops)
+     for (j = 0; j < computeGranularity; j++) {
+        rng_spawn(parent->state.state, nodePtr->state.state, i);
+     }
+
+     nodePtr->numChildren = uts_numChildren(nodePtr);
+
+     #pragma omp task untied firstprivate(i, nodePtr) shared(partialCount)
+        partialCount[i] = parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
+  }
+
+  #pragma omp taskwait
+
+  for (i = 0; i < numChildren; i++) {
+     subtreesize += partialCount[i];
+  }
+  
+  return subtreesize;
+}
+
+#else
 
 unsigned long long parTreeSearch(int depth, Node *parent, int numChildren) 
 {
@@ -218,6 +349,8 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
   
   return subtreesize;
 }
+
+#endif
 
 void uts_read_file ( char *filename )
 {

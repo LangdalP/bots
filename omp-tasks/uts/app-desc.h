@@ -42,4 +42,6 @@ unsigned long long parallel_uts ( Node *);
 
 #define KERNEL_CHECK uts_check_result();
 
+#define BOTS_CUTOFF_DEF_VALUE 10
+
 

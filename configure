@@ -37,6 +37,7 @@ XLC=`xlc -qversion &> /dev/null && echo "yes"`
 PGI=`pgcc &> /dev/null && echo "yes"`
 SUN=`cc -xopenmp &> /dev/null && echo "yes"`
 INS=`insiemecc -fopenmp -h &> /dev/null && echo "yes"`
+GCK=`ls /usr/local/lib/xkaapi/libgomp.so > /dev/null && echo "yes"`
 
 nc=0
 
@@ -75,6 +76,11 @@ if [ -z "$COMPILER" ]; then
    if [ "$INS" = "yes" ]; then
         let nc=nc+1        
         COMPILERS[nc]="insieme"
+   fi
+
+   if [ "$GCK" = "yes" ]; then
+        let nc=nc+1        
+        COMPILERS[nc]="gcclibkomp"
    fi
 
    if [ "$nc" -gt "0" ]; then
@@ -227,6 +233,23 @@ if [ "$COMPILER" = "insieme" -a "$INS" = "yes" ]; then
         OMPLINK_FLAGS=$DEBUG
 fi
 
+if [ "$COMPILER" = "gcclibkomp" -a "$GCK" = "yes" ]; then
+	CC=gcc
+	CLINK=$CC
+	OMPC="$CC -fopenmp"
+	OMPLINK="$CC -L/usr/local/lib/xkaapi/libgomp.so"
+	LABEL=gcclibkomp
+	[ "$debug" = "yes" ] && DEBUG=$DEBUG -g
+	[ "$warnings" = "yes" ] && WARNINGS="$WARNINGS -Wall -Werror"
+
+	OPT_FLAGS=-O3
+	CC_FLAGS="$DEBUG $WARNINGS"
+	OMPC_FLAGS="$DEBUG $WARNINGS"
+	CLINK_FLAGS=$DEBUG
+	OMPLINK_FLAGS=$DEBUG
+  EXTRA_LIBS="-lgomp"
+fi
+
 if [ -z "$CC" ]; then
   echo "Wrong compiler configuration"
   exit 1
@@ -261,6 +284,7 @@ OMPC_FINAL_FLAGS=$OMPC_FINAL_FLAGS
 
 CLINK_FLAGS=$CLINK_FLAGS
 OMPLINK_FLAGS=$OMPLINK_FLAGS
+EXTRA_LIBS=$EXTRA_LIBS
 
 EOF
 

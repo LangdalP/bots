@@ -30,6 +30,11 @@ while [ "$#" -gt 0  ]; do
 	shift
 done
 
+if [ -z "$GCC_LIBGOMP" ]; then
+  GCC_LIBGOMP="$HOME/libgomp.so"
+fi
+
+
 GCC=`gcc -x c -c -fopenmp /dev/null -o /dev/null &>/dev/null  && echo "yes"`
 MCC=`mcc --v &> /dev/null && echo "yes"`
 ICC=`icc -v &> /dev/null && echo "yes"`
@@ -37,7 +42,8 @@ XLC=`xlc -qversion &> /dev/null && echo "yes"`
 PGI=`pgcc &> /dev/null && echo "yes"`
 SUN=`cc -xopenmp &> /dev/null && echo "yes"`
 INS=`insiemecc -fopenmp -h &> /dev/null && echo "yes"`
-GCK=`ls /usr/local/lib/xkaapi/libgomp.so > /dev/null && echo "yes"`
+GCK=`ls /usr/local/lib/xkaapi/libgomp.so > /dev/null &> /dev/null && echo "yes"`
+CUT=`ls $GCC_LIBGOMP > /dev/null &> /dev/null && echo "yes"`
 
 nc=0
 
@@ -81,6 +87,11 @@ if [ -z "$COMPILER" ]; then
    if [ "$GCK" = "yes" ]; then
         let nc=nc+1        
         COMPILERS[nc]="gcclibkomp"
+   fi
+   
+   if [ "$CUT" = "yes" ]; then
+        let nc=nc+1        
+        COMPILERS[nc]="gcccutoff"
    fi
 
    if [ "$nc" -gt "0" ]; then
@@ -239,6 +250,23 @@ if [ "$COMPILER" = "gcclibkomp" -a "$GCK" = "yes" ]; then
 	OMPC="$CC -fopenmp"
 	OMPLINK="$CC -L/usr/local/lib/xkaapi/libgomp.so"
 	LABEL=gcclibkomp
+	[ "$debug" = "yes" ] && DEBUG=$DEBUG -g
+	[ "$warnings" = "yes" ] && WARNINGS="$WARNINGS -Wall -Werror"
+
+	OPT_FLAGS=-O3
+	CC_FLAGS="$DEBUG $WARNINGS"
+	OMPC_FLAGS="$DEBUG $WARNINGS"
+	CLINK_FLAGS=$DEBUG
+	OMPLINK_FLAGS=$DEBUG
+  EXTRA_LIBS="-lgomp"
+fi
+
+if [ "$COMPILER" = "gcccutoff" -a "$CUT" = "yes" ]; then
+	CC=gcc
+	CLINK=$CC
+	OMPC="$CC -fopenmp"
+	OMPLINK="$CC -L$GCC_LIBGOMP"
+	LABEL=gcccutoff
 	[ "$debug" = "yes" ] && DEBUG=$DEBUG -g
 	[ "$warnings" = "yes" ] && WARNINGS="$WARNINGS -Wall -Werror"
 

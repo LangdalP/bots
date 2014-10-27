@@ -2,6 +2,7 @@ DEF_CPUS=all
 DEF_VERSIONS=all
 DEF_LABELS=all
 DEF_CUTOFFS=none
+DEF_REPS=1
 
 print_help()
 {
@@ -12,6 +13,7 @@ print_help()
 	echo "-check			Enable verification"
 	echo "-debug			Show extra messages"
 	echo "-h			Prints this help"
+	echo "-r repetitions		Number of repetitions to use for execution"
 	echo "-i inputs_list		List of inputs to use for executions"
 	echo "-x cutoff_list		List of cutoffs to use for executions"
 	echo "-l label_list		List of labels (compilers) to use for executions"
@@ -35,6 +37,8 @@ parse_args ()
 			"-debug") VERBOSE=yes
 				;;
 			"-h") 	print_help $0; exit 
+				;;
+			"-r")   shift; ARG_REPS=$1
 				;;
 			"-i")   shift; ARG_INPUTS=$1
 				;;
@@ -230,6 +234,12 @@ set_values ()
 		CUTOFFS=$DEF_CUTOFFS
 	fi
     expand_cutoffs
+	
+	if [ "$ARG_REPS" ]; then
+		REPS=$ARG_REPS
+	else
+		REPS=$DEF_REPS
+	fi
 }
 
 exec_serial ()
@@ -302,10 +312,11 @@ exec_app ()
            ;;
          esac
     fi
+	extra_reps="-r $REPS"
 
 	[ "$EXEC_MANAGER" ] && exec_external $cpus $app $label $version $extra_cutoff $* && return
 	(echo $version | grep serial) > /dev/null && exec_serial $cpus $app.$label.$version $* && return
-	(echo $version | grep omp) > /dev/null && exec_omp $cpus $app.$label.$version $extra_cutoff $*  && return
+	(echo $version | grep omp) > /dev/null && exec_omp $cpus $app.$label.$version $extra_cutoff $extra_reps $*  && return
 
 	echo "FATAL ERROR: Don't know how to execute $version"
 	exit 1

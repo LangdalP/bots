@@ -38,6 +38,7 @@ fi
 GCC=`gcc -x c -c -fopenmp /dev/null -o /dev/null &>/dev/null  && echo "yes"`
 MCC=`mcc --v &> /dev/null && echo "yes"`
 ICC=`icc -v &> /dev/null && echo "yes"`
+CLANG=`clang -x c -c -fopenmp /dev/null -o /dev/null &>/dev/null  && echo "yes"`
 XLC=`xlc -qversion &> /dev/null && echo "yes"`
 PGI=`pgcc &> /dev/null && echo "yes"`
 SUN=`cc -xopenmp &> /dev/null && echo "yes"`
@@ -62,6 +63,11 @@ if [ -z "$COMPILER" ]; then
    if [ "$ICC" = "yes" ]; then
 	let nc=nc+1
 	COMPILERS[nc]="icc"
+   fi
+
+   if [ "$CLANG" = "yes" ]; then
+    let nc=nc+1
+    COMPILERS[nc]="clang"
    fi
 
    if [ "$XLC" = "yes" ]; then
@@ -147,6 +153,21 @@ if [ "$COMPILER" = "icc" -a "$ICC" = "yes" ]; then
 	OMPLINK_FLAGS=$DEBUG
 fi
 
+if [ "$COMPILER" = "clang" -a "$CLANG" = "yes" ]; then
+    CC=clang
+    CLINK=$CC
+    OMPC="$CC -fopenmp"
+    OMPLINK="$CC -fopenmp"
+    LABEL=clang
+    [ "$debug" = "yes" ] && DEBUG=$DEBUG -g
+    [ "$warnings" = "yes" ] && WARNINGS="$WARNINGS -Wall -Werror"
+
+    OPT_FLAGS=-O3
+    CC_FLAGS="$DEBUG $WARNINGS"
+    OMPC_FLAGS="$DEBUG $WARNINGS"
+    CLINK_FLAGS=$DEBUG
+    OMPLINK_FLAGS=$DEBUG
+fi
 
 if [ "$COMPILER" = "mcc" -a "$MCC" = "yes" ]; then
 	case $(uname -i) in

@@ -1,7 +1,7 @@
 #!/bin/bash
 #defaults
 
-DEF_INPUTS=1024
+DEF_INPUTS=8192 # Medium
 
 #don't modify from here
 

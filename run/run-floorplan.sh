@@ -1,7 +1,7 @@
 #!/bin/bash
 #defaults
 
-DEF_INPUTS=input.20
+DEF_INPUTS=input.20 # Medium
 
 #don't modify from here
 

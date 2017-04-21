@@ -1,7 +1,7 @@
 #!/bin/bash
 #defaults
 
-DEF_INPUTS=$((32*1024*1024))
+DEF_INPUTS=134217728 # Medium
 
 #don't modify from here
 

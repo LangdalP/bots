@@ -1,7 +1,7 @@
 #!/bin/bash
 #defaults
 
-DEF_INPUTS=25x25
+DEF_INPUTS=75x100 # Medium
 
 #don't modify from here
 

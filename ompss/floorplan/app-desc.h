@@ -17,30 +17,27 @@
 /*  along with this program; if not, write to the Free Software                               */
 /*  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA            */
 /**********************************************************************************************/
-#include "omp-tasks-app.h"
-#include "uts.h"
 
-#define BOTS_APP_NAME "Unbalance Tree Search"
+#include "ompss-app.h"
+
+#define BOTS_APP_NAME "Floorplan"
 #define BOTS_APP_PARAMETERS_DESC "%s"
 #define BOTS_APP_PARAMETERS_LIST ,bots_arg_file
 
 #define BOTS_APP_USES_ARG_FILE
-#define BOTS_APP_DEF_ARG_FILE "Input filename"
-#define BOTS_APP_DESC_ARG_FILE "UTS input file (mandatory)"
+#define BOTS_APP_DESC_ARG_FILE "Cell description file (mandatory)"
 
-#define BOTS_APP_INIT \
-  Node root; \
-  uts_read_file(bots_arg_file);
+#define BOTS_CUTOFF_DEF_VALUE 5
 
-#define KERNEL_INIT uts_initRoot(&root);
+void floorplan_init(char *);
+void floorplan_end (void);
+void compute_floorplan(void);
+int floorplan_verify(void);
 
-unsigned long long parallel_uts ( Node *);
+#define KERNEL_INIT floorplan_init(bots_arg_file)
+#define KERNEL_CALL compute_floorplan()
+#define KERNEL_FINI floorplan_end()
 
-#define KERNEL_CALL bots_number_of_tasks = parallel_uts(&root);
- 
-#define KERNEL_FINI uts_show_stats();
+#define KERNEL_CHECK floorplan_verify()
 
-#define KERNEL_CHECK uts_check_result();
-
-#define BOTS_CUTOFF_DEF_VALUE 10
 

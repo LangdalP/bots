@@ -19,10 +19,10 @@
 ##############################################################################################
 
 LIBS = -lm
-#PROGRAM_OBJS=
+PROGRAM_OBJS=uts.o brg_sha1.o
 
-CUTOFF_VERSIONS = manual if_clause final
-TIED_VERSIONS = yes
+#CUTOFF_VERSIONS = manual if_clause
+TIED_VERSIONS = YES
 
 BASE_DIR = ../../
 

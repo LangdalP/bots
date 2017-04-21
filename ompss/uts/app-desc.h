@@ -17,7 +17,7 @@
 /*  along with this program; if not, write to the Free Software                               */
 /*  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA            */
 /**********************************************************************************************/
-#include "omp-tasks-app.h"
+#include "ompss-app.h"
 #include "uts.h"
 
 #define BOTS_APP_NAME "Unbalance Tree Search"
@@ -42,5 +42,4 @@ unsigned long long parallel_uts ( Node *);
 
 #define KERNEL_CHECK uts_check_result();
 
-#define BOTS_CUTOFF_DEF_VALUE 10
 

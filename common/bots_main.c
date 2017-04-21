@@ -286,12 +286,12 @@ bots_get_params_common(int argc, char **argv)
       {
          switch (argv[i][1])
          {
- 	    case 'r':
- 	       argv[i][1] = '*';
-                i++;
-                if (argc == i) { bots_print_usage(); exit(100); }
-                bots_repetitions = atoi(argv[i]);
-                break;
+	    case 'r':
+	       argv[i][1] = '*';
+		i++;
+		if (argc == i) { bots_print_usage(); exit(100); }
+		bots_repetitions = atoi(argv[i]);
+		break;
 #ifdef BOTS_APP_USES_ARG_CUTOFF_1
 	    case 'a':
 	       argv[i][1] = '*';

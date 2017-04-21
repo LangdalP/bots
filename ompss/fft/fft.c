@@ -29,9 +29,8 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include "app-desc.h"
 #include "bots.h"
-
+#include "app-desc.h"
 
 /* Definitions and operations for complex numbers */
 
@@ -4677,32 +4676,12 @@ void fft_aux(int n, COMPLEX * in, COMPLEX * out, int *factors, COMPLEX * W, int 
 
           #pragma omp taskwait
 
-      #if defined(IF_CUTOFF)
-	  for (k = 0; k < n; k += m) {
-	       #pragma omp task untied if (n < bots_cutoff_value)
-	       fft_aux(m, out + k, in + k, factors + 1, W, nW);
-	  }
-      #elif defined(FINAL_CUTOFF)
-	  for (k = 0; k < n; k += m) {
-	       #pragma omp task untied final (n+1 > bots_cutoff_value)
-	       fft_aux(m, out + k, in + k, factors + 1, W, nW);
-	  }
-      #elif defined (MANUAL_CUTOFF)
-	  for (k = 0; k < n; k += m) {
-	       #pragma omp task untied
-	       fft_aux_seq(m, out + k, in + k, factors + 1, W, nW);
-	  }
-      #else
 	  for (k = 0; k < n; k += m) {
                #pragma omp task untied
 	       fft_aux(m, out + k, in + k, factors + 1, W, nW);
 	  }
-      #endif
-
           #pragma omp taskwait
      }
-
-
      /* 
       * now multiply by the twiddle factors, and perform m FFTs
       * of length r
@@ -4807,9 +4786,6 @@ void fft(int n, COMPLEX * in, COMPLEX * out)
 
      bots_message("Computing coefficients ");
      W = (COMPLEX *) malloc((n + 1) * sizeof(COMPLEX));
-     #pragma omp parallel
-     #pragma omp single
-     #pragma omp task untied
      compute_w_coefficients(n, 0, n / 2, W);
      bots_message(" completed!\n");
 
@@ -4824,9 +4800,6 @@ void fft(int n, COMPLEX * in, COMPLEX * out)
      } while (l > 1);
 
      bots_message("Computing FFT ");
-     #pragma omp parallel
-     #pragma omp single
-     #pragma omp task untied
      fft_aux(n, in, out, factors, W, n);
      bots_message(" completed!\n");
 

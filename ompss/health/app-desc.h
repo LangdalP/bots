@@ -17,30 +17,36 @@
 /*  along with this program; if not, write to the Free Software                               */
 /*  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA            */
 /**********************************************************************************************/
-#include "omp-tasks-app.h"
-#include "uts.h"
 
-#define BOTS_APP_NAME "Unbalance Tree Search"
+#include "ompss-app.h"
+#include "health.h"
+
+#define BOTS_APP_NAME "Health"
 #define BOTS_APP_PARAMETERS_DESC "%s"
 #define BOTS_APP_PARAMETERS_LIST ,bots_arg_file
 
+//#define BOTS_APP_SELF_TIMING
+
 #define BOTS_APP_USES_ARG_FILE
 #define BOTS_APP_DEF_ARG_FILE "Input filename"
-#define BOTS_APP_DESC_ARG_FILE "UTS input file (mandatory)"
+#define BOTS_APP_DESC_ARG_FILE "Health input file (mandatory)"
+
+#define BOTS_CUTOFF_DEF_VALUE 2
 
 #define BOTS_APP_INIT \
-  Node root; \
-  uts_read_file(bots_arg_file);
+   struct Village *top;\
+   read_input_data(bots_arg_file);
 
-#define KERNEL_INIT uts_initRoot(&root);
+#define KERNEL_INIT \
+   allocate_village(&top, NULL, NULL, sim_level, 0);
 
-unsigned long long parallel_uts ( Node *);
-
-#define KERNEL_CALL bots_number_of_tasks = parallel_uts(&root);
+#define KERNEL_CALL sim_village_main_par(top);
  
-#define KERNEL_FINI uts_show_stats();
+#define KERNEL_FINI
 
-#define KERNEL_CHECK uts_check_result();
+//#define KERNEL_SEQ_INIT
+//#define KERNEL_SEQ_CALL
+//#define KERNEL_SEQ_FINI
 
-#define BOTS_CUTOFF_DEF_VALUE 10
+#define KERNEL_CHECK check_village(top);
 

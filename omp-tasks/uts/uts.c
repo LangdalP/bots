@@ -167,7 +167,7 @@ int uts_numChildren(Node *parent)
 }
 
 
-unsigned long long serTreeSearch(int depth, Node *parent, int numChildren) 
+unsigned long long serTreeSearch(int depth, Node *parent, int numChildren)
 {
   unsigned long long subtreesize = 1, partialCount[numChildren];
   Node n[numChildren];
@@ -178,14 +178,14 @@ unsigned long long serTreeSearch(int depth, Node *parent, int numChildren)
      n[i].height = parent->height + 1;
      // The following line is the work (one or more SHA-1 ops)
      for (j = 0; j < computeGranularity; j++) {
-        rng_spawn(parent->state.state, n[i].state.state, i);
+	rng_spawn(parent->state.state, n[i].state.state, i);
      }
      partialCount[i] = serTreeSearch(depth+1, &n[i], uts_numChildren(&n[i]));
   }
- 
+
   // computing total size
   for (i = 0; i < numChildren; i++) subtreesize += partialCount[i];
-  
+
   return subtreesize;
 }
 
@@ -212,7 +212,7 @@ unsigned long long parallel_uts ( Node *root )
 
 #if defined(IF_CUTOFF)
 
-unsigned long long parTreeSearch(int depth, Node *parent, int numChildren) 
+unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
 {
   Node n[numChildren], *nodePtr;
   int i, j;
@@ -226,13 +226,13 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
 
      // The following line is the work (one or more SHA-1 ops)
      for (j = 0; j < computeGranularity; j++) {
-        rng_spawn(parent->state.state, nodePtr->state.state, i);
+	rng_spawn(parent->state.state, nodePtr->state.state, i);
      }
 
      nodePtr->numChildren = uts_numChildren(nodePtr);
 
      #pragma omp task untied firstprivate(i, nodePtr) shared(partialCount) if(depth < bots_cutoff_value)
-        partialCount[i] = parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
+	partialCount[i] = parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
   }
 
   #pragma omp taskwait
@@ -240,13 +240,13 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
   for (i = 0; i < numChildren; i++) {
      subtreesize += partialCount[i];
   }
-  
+
   return subtreesize;
 }
 
 #elif defined(FINAL_CUTOFF)
 
-unsigned long long parTreeSearch(int depth, Node *parent, int numChildren) 
+unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
 {
   Node n[numChildren], *nodePtr;
   int i, j;
@@ -260,13 +260,13 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
 
      // The following line is the work (one or more SHA-1 ops)
      for (j = 0; j < computeGranularity; j++) {
-        rng_spawn(parent->state.state, nodePtr->state.state, i);
+	rng_spawn(parent->state.state, nodePtr->state.state, i);
      }
 
      nodePtr->numChildren = uts_numChildren(nodePtr);
 
      #pragma omp task untied firstprivate(i, nodePtr) shared(partialCount) final(depth+1 >= bots_cutoff_value)
-        partialCount[i] = parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
+	partialCount[i] = parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
   }
 
   #pragma omp taskwait
@@ -274,18 +274,18 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
   for (i = 0; i < numChildren; i++) {
      subtreesize += partialCount[i];
   }
-  
+
   return subtreesize;
 }
 
 #elif defined(MANUAL_CUTOFF)
 
-unsigned long long parTreeSearch(int depth, Node *parent, int numChildren) 
+unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
 {
   if (depth >= bots_cutoff_value) {
     return serTreeSearch(depth, parent, numChildren);
   }
-  
+
   Node n[numChildren], *nodePtr;
   int i, j;
   unsigned long long subtreesize = 1, partialCount[numChildren];
@@ -298,13 +298,13 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
 
      // The following line is the work (one or more SHA-1 ops)
      for (j = 0; j < computeGranularity; j++) {
-        rng_spawn(parent->state.state, nodePtr->state.state, i);
+	rng_spawn(parent->state.state, nodePtr->state.state, i);
      }
 
      nodePtr->numChildren = uts_numChildren(nodePtr);
 
      #pragma omp task untied firstprivate(i, nodePtr) shared(partialCount)
-        partialCount[i] = parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
+	partialCount[i] = parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
   }
 
   #pragma omp taskwait
@@ -312,7 +312,7 @@ unsigned long long parTreeSearch(int depth, Node *parent, int numChildren)
   for (i = 0; i < numChildren; i++) {
      subtreesize += partialCount[i];
   }
-  
+
   return subtreesize;
 }
 

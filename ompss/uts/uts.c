@@ -61,6 +61,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <omp.h>
 #include <sys/time.h>
 
 #include "app-desc.h"
@@ -110,37 +111,57 @@ unsigned long long  exp_num_leaves = 0;
  *  FUNCTIONS                                              *
  ***********************************************************/
 
+// Interpret 32 bit positive integer as value on [0,1)
+double rng_toProb(int n)
+{
+  if (n < 0) {
+    printf("*** toProb: rand n = %d out of range\n",n);
+  }
+  return ((n<0)? 0.0 : ((double) n)/2147483648.0);
+}
+
 void uts_initRoot(Node * root)
 {
    root->height = 0;
    root->numChildren = -1;      // means not yet determined
    rng_init(root->state.state, rootId);
+
+   bots_message("Root node at %p\n", root);
 }
 
-int uts_numChildren(Node *node)
+
+int uts_numChildren_bin(Node * parent)
+{
+  // distribution is identical everywhere below root
+  int    v = rng_rand(parent->state.state);	
+  double d = rng_toProb(v);
+
+  return (d < nonLeafProb) ? nonLeafBF : 0;
+}
+
+int uts_numChildren(Node *parent)
 {
   int numChildren = 0;
 
-  // determine the number of children
-  if (node->height == 0) numChildren = (int) floor(b_0);
-  else
-  {
-    // distribution is identical everywhere below root
-    int    v = rng_rand(node->state.state);	
-    double d = rng_toProb(v);
-    numChildren = (d < nonLeafProb) ? nonLeafBF : 0;
-  }
+  /* Determine the number of children */
+  if (parent->height == 0) numChildren = (int) floor(b_0);
+  else numChildren = uts_numChildren_bin(parent);
   
-  // limit number of children (only a BIN root can have more than MAXNUMCHILDREN)
-  if (node->height != 0) {
+  // limit number of children
+  // only a BIN root can have more than MAXNUMCHILDREN
+  if (parent->height == 0) {
+    int rootBF = (int) ceil(b_0);
+    if (numChildren > rootBF) {
+      bots_debug("*** Number of children of root truncated from %d to %d\n", numChildren, rootBF);
+      numChildren = rootBF;
+    }
+  }
+  else {
     if (numChildren > MAXNUMCHILDREN) {
       bots_debug("*** Number of children truncated from %d to %d\n", numChildren, MAXNUMCHILDREN);
       numChildren = MAXNUMCHILDREN;
     }
   }
-
-  /* including info into node */
-  node->numChildren = numChildren;
 
   return numChildren;
 }
@@ -149,33 +170,48 @@ int uts_numChildren(Node *node)
  * Recursive depth-first implementation                    *
  ***********************************************************/
 
-unsigned long long serial_uts ( Node *root )
+unsigned long long parallel_uts ( Node *root )
 {
-   unsigned long long num_nodes;
+   unsigned long long num_nodes = 0 ;
+   root->numChildren = uts_numChildren(root);
+
    bots_message("Computing Unbalance Tree Search algorithm ");
-   num_nodes = serTreeSearch( 0, root, uts_numChildren(root) );
-   bots_message(" completed!\n");
+
+   num_nodes = parTreeSearch( 0, root, root->numChildren );
+
+   bots_message(" completed!");
+
    return num_nodes;
 }
 
-unsigned long long serTreeSearch(int depth, Node *parent, int numChildren) 
+unsigned long long parTreeSearch(int depth, Node *parent, int numChildren) 
 {
-  unsigned long long subtreesize = 1, partialCount[numChildren];
-  Node n[numChildren];
+  Node n[numChildren], *nodePtr;
   int i, j;
+  unsigned long long subtreesize = 1, partialCount[numChildren];
 
   // Recurse on the children
   for (i = 0; i < numChildren; i++) {
-     n[i].height = parent->height + 1;
+     nodePtr = &n[i];
+
+     nodePtr->height = parent->height + 1;
+
      // The following line is the work (one or more SHA-1 ops)
      for (j = 0; j < computeGranularity; j++) {
-        rng_spawn(parent->state.state, n[i].state.state, i);
+        rng_spawn(parent->state.state, nodePtr->state.state, i);
      }
-     partialCount[i] = serTreeSearch(depth+1, &n[i], uts_numChildren(&n[i]));
+
+     nodePtr->numChildren = uts_numChildren(nodePtr);
+
+     #pragma omp task untied firstprivate(i, nodePtr) shared(partialCount)
+        partialCount[i] = parTreeSearch(depth+1, nodePtr, nodePtr->numChildren);
   }
- 
-  // computing total size
-  for (i = 0; i < numChildren; i++) subtreesize += partialCount[i];
+
+  #pragma omp taskwait
+
+  for (i = 0; i < numChildren; i++) {
+     subtreesize += partialCount[i];
+  }
   
   return subtreesize;
 }
@@ -185,7 +221,7 @@ void uts_read_file ( char *filename )
    FILE *fin;
 
    if ((fin = fopen(filename, "r")) == NULL) {
-      bots_message( "Could not open input file (%s)\n", filename);
+      bots_message("Could not open input file (%s)\n", filename);
       exit (-1);
    }
    fscanf(fin,"%lf %lf %d %d %d %llu %d %llu",
@@ -202,7 +238,7 @@ void uts_read_file ( char *filename )
 
    computeGranularity = max(1,computeGranularity);
 
-      // Printing input data
+   // Printing input data
    bots_message("\n");
    bots_message("Root branching factor                = %f\n", b_0);
    bots_message("Root seed (0 <= 2^31)                = %d\n", rootId);
@@ -216,15 +252,18 @@ void uts_read_file ( char *filename )
 
 void uts_show_stats( void )
 {
+   int nPes = atoi(bots_resources);
    int chunkSize = 0;
 
    bots_message("\n");
-   bots_message("Tree size                            = %llu\n", (unsigned long long) bots_number_of_tasks );
+   bots_message("Tree size                            = %llu\n", (unsigned long long)  bots_number_of_tasks );
    bots_message("Maximum tree depth                   = %d\n", maxTreeDepth );
    bots_message("Chunk size                           = %d\n", chunkSize );
    bots_message("Number of leaves                     = %llu (%.2f%%)\n", nLeaves, nLeaves/(float)bots_number_of_tasks*100.0 ); 
+   bots_message("Number of PE's                       = %.4d threads\n", nPes );
    bots_message("Wallclock time                       = %.3f sec\n", bots_time_program );
    bots_message("Overall performance                  = %.0f nodes/sec\n", (bots_number_of_tasks / bots_time_program) );
+   bots_message("Performance per PE                   = %.0f nodes/sec\n", (bots_number_of_tasks / bots_time_program / nPes) );
 }
 
 int uts_check_result ( void )

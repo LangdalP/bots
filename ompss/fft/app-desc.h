@@ -17,30 +17,40 @@
 /*  along with this program; if not, write to the Free Software                               */
 /*  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA            */
 /**********************************************************************************************/
-#include "omp-tasks-app.h"
-#include "uts.h"
 
-#define BOTS_APP_NAME "Unbalance Tree Search"
-#define BOTS_APP_PARAMETERS_DESC "%s"
-#define BOTS_APP_PARAMETERS_LIST ,bots_arg_file
+#include "ompss-app.h"
+#include "fft.h"
 
-#define BOTS_APP_USES_ARG_FILE
-#define BOTS_APP_DEF_ARG_FILE "Input filename"
-#define BOTS_APP_DESC_ARG_FILE "UTS input file (mandatory)"
+#define BOTS_APP_NAME "FFT"
+#define BOTS_APP_PARAMETERS_DESC "Size=%d"
+#define BOTS_APP_PARAMETERS_LIST ,bots_arg_size
 
-#define BOTS_APP_INIT \
-  Node root; \
-  uts_read_file(bots_arg_file);
+#define BOTS_APP_USES_ARG_SIZE
+#define BOTS_APP_DEF_ARG_SIZE 32*1024*1024
+#define BOTS_APP_DESC_ARG_SIZE "Matrix Size"
 
-#define KERNEL_INIT uts_initRoot(&root);
+#define BOTS_APP_INIT int i;\
+     COMPLEX *in, *out1=NULL, *out2=NULL;\
+     in = malloc(bots_arg_size * sizeof(COMPLEX));\
 
-unsigned long long parallel_uts ( Node *);
+#define KERNEL_INIT\
+     out1 = malloc(bots_arg_size * sizeof(COMPLEX));\
+     for (i = 0; i < bots_arg_size; ++i) {\
+          c_re(in[i]) = 1.0;\
+          c_im(in[i]) = 1.0;\
+     }
+#define KERNEL_CALL fft(bots_arg_size, in, out1);
+#define KERNEL_FINI 
 
-#define KERNEL_CALL bots_number_of_tasks = parallel_uts(&root);
- 
-#define KERNEL_FINI uts_show_stats();
+#define KERNEL_SEQ_INIT\
+     out2 = malloc(bots_arg_size * sizeof(COMPLEX));\
+     for (i = 0; i < bots_arg_size; ++i) {\
+          c_re(in[i]) = 1.0;\
+          c_im(in[i]) = 1.0;\
+     }
+#define KERNEL_SEQ_CALL fft_seq(bots_arg_size, in, out2);
+#define KERNEL_SEQ_FINI
 
-#define KERNEL_CHECK uts_check_result();
-
-#define BOTS_CUTOFF_DEF_VALUE 10
+#define BOTS_APP_CHECK_USES_SEQ_RESULT
+#define KERNEL_CHECK test_correctness(bots_arg_size, out1, out2)
 

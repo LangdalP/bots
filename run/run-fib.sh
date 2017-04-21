@@ -1,7 +1,8 @@
 #!/bin/bash
 #defaults
 
-DEF_INPUTS=20
+DEF_INPUTS=50   # Medium
+DEF_CUTOFFS=10  # Medium
 
 #don't modify from here
 

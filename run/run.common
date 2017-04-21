@@ -1,7 +1,9 @@
 DEF_CPUS=all
 DEF_VERSIONS=all
 DEF_LABELS=all
-DEF_CUTOFFS=none
+if [ -z "$DEF_CUTOFFS" ]; then
+    DEF_CUTOFFS=none
+fi
 
 print_help()
 {

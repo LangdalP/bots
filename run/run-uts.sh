@@ -1,7 +1,8 @@
 #!/bin/bash
 #defaults
 
-DEF_INPUTS=medium.input
+DEF_INPUTS=medium.input     # Medium
+export OMP_STACKSIZE="55M"  # Necessary to avoid segfault
 
 #don't modify from here
 

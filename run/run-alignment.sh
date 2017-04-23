@@ -1,7 +1,7 @@
 #!/bin/bash
 #defaults
 
-DEF_INPUTS=prot.100.aa
+DEF_INPUTS=prot.100.aa # Medium, largest available
 
 #don't modify from here
 

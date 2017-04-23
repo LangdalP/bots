@@ -1,7 +1,7 @@
 #!/bin/bash
 #defaults
 
-DEF_INPUTS=input.20 # Medium
+DEF_INPUTS=input.20 # Medium, largest available
 
 #don't modify from here
 

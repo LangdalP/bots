@@ -1,7 +1,7 @@
 #!/bin/bash
 #defaults
 
-DEF_INPUTS=knapsack-040.input # Medium
+DEF_INPUTS=knapsack-044.input # Large
 
 #don't modify from here
 

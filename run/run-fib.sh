@@ -1,8 +1,8 @@
 #!/bin/bash
 #defaults
 
-DEF_INPUTS=50   # Medium
-DEF_CUTOFFS=10  # Medium
+DEF_INPUTS=53   # Large
+DEF_CUTOFFS=20  # Large
 
 #don't modify from here
 

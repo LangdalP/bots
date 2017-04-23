@@ -1,7 +1,7 @@
 #!/bin/bash
 #defaults
 
-DEF_INPUTS=134217728 # Medium
+DEF_INPUTS=268435456 # Large
 
 #don't modify from here
 

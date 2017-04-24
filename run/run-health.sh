@@ -1,7 +1,7 @@
 #!/bin/bash
 #defaults
 
-DEF_INPUTS=large.input
+DEF_INPUTS=huge.input
 
 #don't modify from here
 
